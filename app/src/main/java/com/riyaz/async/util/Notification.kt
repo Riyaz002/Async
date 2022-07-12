@@ -12,7 +12,7 @@ import com.riyaz.async.R
 const val PENDING_INTENT_CODE = 21
 const val NOTIFICATION_ID = 1
 
-fun NotificationManager.sendNotification(context: Context, channelId: String,title: String){
+fun NotificationManager.sendNotification(context: Context, channelId: String,title: String): Notification{
 
     val notificationIntent = Intent(context, MainActivity::class.java)
     val pendingIntent = PendingIntent.getActivity(context, PENDING_INTENT_CODE, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
@@ -20,11 +20,11 @@ fun NotificationManager.sendNotification(context: Context, channelId: String,tit
     val notificationBuilder = NotificationCompat.Builder(context, channelId)
         .setContentTitle(title)
         .setContentText("playing sara's love song..")
-        .setSmallIcon(R.drawable.ic_baseline_play_24)
+        .setSmallIcon(R.drawable.ic_baseline_music_note_24)
         .setContentIntent(pendingIntent)
         .setAutoCancel(false)
 
-    notify(NOTIFICATION_ID, notificationBuilder.build())
+    return notificationBuilder.build()
 }
 
 fun createNotificationChannel(context: Context, channelName: String, channelId: String,channelDescription: String) {

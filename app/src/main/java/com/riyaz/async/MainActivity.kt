@@ -2,6 +2,7 @@ package com.riyaz.async
 
 import android.app.NotificationManager
 import android.content.*
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
@@ -17,6 +18,7 @@ import com.riyaz.async.receiver.MyLocalReceiver
 import com.riyaz.async.services.MusicService
 import com.riyaz.async.util.NOTIFICATION_ID
 import com.riyaz.async.util.sendNotification
+import java.lang.IllegalStateException
 import java.util.ArrayList
 
 class MainActivity : AppCompatActivity() {
@@ -52,24 +54,27 @@ class MainActivity : AppCompatActivity() {
                    musicService!!.pause()
                    button.text = "Resume"
                } else{
+                   startMusicService()
                    musicService!!.play()
                    button.text = "Pause"
-                   setNotification()
                }
            }
         }
-        createMusicService()
-        startBroadcastReceiver()
+    }
+
+    private fun startMusicService() {
+        val intent = Intent(applicationContext, MusicService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            applicationContext.startForegroundService(intent)
+        } else{
+            startService(intent)
+        }
     }
 
     private fun startBroadcastReceiver() {
         LocalBroadcastManager.getInstance(this).registerReceiver(musicCompletionBroadcastReceiver, IntentFilter(Constants.MUSIC_COMPLETED_ACTION))
     }
 
-    private fun setNotification() {
-        val notificationManager = this.getSystemService<NotificationManager>()
-        notificationManager?.sendNotification(this, "song", "Love Song")
-    }
 
     fun displayText(text: String){
         (textView.text.toString()+ "\n"+ text).also { textView.text = it }
@@ -77,15 +82,18 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        createMusicService()
+        startBroadcastReceiver()
         Log.d("Main", "onStart")
     }
 
     override fun onResume() {
+        Log.d("Main", "onResume")
         super.onResume()
     }
 
     override fun onRestart() {
-        Log.d("Main", "onResume")
+        Log.d("Main", "onRestart")
         super.onRestart()
     }
 
@@ -102,6 +110,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         Log.d("Main", "onStop")
         super.onStop()
+        destroyMusicService()
     }
 
     fun createToast(message: String) {
@@ -124,7 +133,8 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         Log.d("Main", "onDestroy")
         destroyMusicService()
-        unregisterReceiver(musicCompletionBroadcastReceiver)
+        stopService(Intent(this, MusicService::class.java))
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(musicCompletionBroadcastReceiver)
         super.onDestroy()
     }
 
@@ -133,8 +143,6 @@ class MainActivity : AppCompatActivity() {
             unbindService(musicServiceConnection)
             isServiceConnected = false
         }
-        val notificationManager = this.getSystemService<NotificationManager>()
-        notificationManager?.cancel(NOTIFICATION_ID)
     }
 }
 
